@@ -77,7 +77,7 @@ class ModelManagerViewModel(application: Application) : AndroidViewModel(applica
 
     fun refreshInstalled() {
         val activeModelPath = prefs.activeModelPath
-        val files = modelsDir.listFiles { f -> f.extension == "task" }?.toList() ?: emptyList()
+        val files = modelsDir.listFiles { f -> f.extension == "litertlm" }?.toList() ?: emptyList()
         _installedModels.value = files.map { file ->
             InstalledModel(
                 file = file,

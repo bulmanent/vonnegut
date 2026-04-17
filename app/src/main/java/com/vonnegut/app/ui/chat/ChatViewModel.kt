@@ -91,7 +91,6 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 inferenceEngine.load(
                     context = getApplication(),
                     modelPath = modelPath,
-                    maxTokens = prefs.maxResponseTokens,
                     temperature = prefs.temperature
                 )
                 _uiState.value = ChatUiState.Ready
@@ -181,83 +180,66 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 Message(sessionId = session.id, role = Role.USER, content = trimmed)
             )
 
-            val prompt = buildPrompt(session.id, trimmed)
+            val systemInstruction = buildSystemInstruction()
+            val history = buildHistory(session.id)
 
             _uiState.value = ChatUiState.Generating
             showTypingIndicator()
 
-            // Accumulate streamed tokens here; callbacks arrive on a background thread
             val accumulator = StringBuilder()
 
-            inferenceEngine.generateAsync(
-                prompt = prompt,
-                onToken = { token ->
-                    accumulator.append(token)
-                    val snapshot = accumulator.toString()
-                    viewModelScope.launch(Dispatchers.Main) {
-                        updateStreamingMessage(snapshot)
+            try {
+                inferenceEngine.generate(
+                    systemInstruction = systemInstruction,
+                    history = history,
+                    userMessage = trimmed,
+                    temperature = prefs.temperature,
+                    onToken = { token ->
+                        accumulator.append(token)
+                        updateStreamingMessage(accumulator.toString())
                     }
-                },
-                onDone = {
-                    viewModelScope.launch(Dispatchers.Main) {
-                        finaliseResponse(session.id, accumulator.toString())
-                    }
-                },
-                onError = { e ->
-                    Log.e(TAG, "Inference error", e)
-                    viewModelScope.launch(Dispatchers.Main) {
-                        removeTypingIndicator()
-                        _uiState.value = ChatUiState.Ready
-                        appendErrorMessage("Inference failed: ${e.message}")
-                    }
-                }
-            )
+                )
+                finaliseResponse(session.id, accumulator.toString())
+            } catch (e: Exception) {
+                Log.e(TAG, "Inference error", e)
+                removeTypingIndicator()
+                _uiState.value = ChatUiState.Ready
+                appendErrorMessage("Inference failed: ${e.message}")
+            }
         }
     }
 
-    private suspend fun buildPrompt(sessionId: Long, newMessage: String): String =
+    private fun buildSystemInstruction(): String {
+        val systemBlock = prefs.systemPrompt
+        val profileBlock = prefs.buildUserProfileBlock()
+        val instructionsBlock = prefs.customInstructions
+        return buildString {
+            appendLine(systemBlock)
+            appendLine()
+            appendLine(profileBlock)
+            if (instructionsBlock.isNotBlank()) {
+                appendLine()
+                appendLine("[CUSTOM INSTRUCTIONS]")
+                appendLine(instructionsBlock)
+            }
+        }.trim()
+    }
+
+    private suspend fun buildHistory(sessionId: Long): List<Pair<String, String>> =
         withContext(Dispatchers.Default) {
             val allMessages = repository.getMessagesSync(sessionId)
             // Drop the user message we just inserted (it's the last one)
             val history = allMessages.dropLast(1)
-
-            val systemBlock = prefs.systemPrompt
-            val profileBlock = prefs.buildUserProfileBlock()
-            val instructionsBlock = prefs.customInstructions
-
-            val overheadChars = (systemBlock.length + profileBlock.length +
-                    instructionsBlock.length + newMessage.length + 300)
-            val budgetChars = (prefs.contextWindowLimit * 4) - overheadChars
-
-            // Fill history from newest backwards within char budget
-            val historyLines = mutableListOf<String>()
+            // Apply a character budget so we don't pass unbounded context
+            val budgetChars = prefs.contextWindowLimit * 4
+            val result = mutableListOf<Pair<String, String>>()
             var spent = 0
             for (msg in history.asReversed()) {
-                val label = if (msg.role == Role.USER) "User" else "Assistant"
-                val line = "$label: ${msg.content}\n"
-                if (spent + line.length > budgetChars) break
-                historyLines.add(0, line)
-                spent += line.length
+                if (spent + msg.content.length > budgetChars) break
+                result.add(0, Pair(msg.role, msg.content))
+                spent += msg.content.length
             }
-
-            buildString {
-                appendLine(systemBlock)
-                appendLine()
-                appendLine(profileBlock)
-                if (instructionsBlock.isNotBlank()) {
-                    appendLine()
-                    appendLine("[CUSTOM INSTRUCTIONS]")
-                    appendLine(instructionsBlock)
-                }
-                if (historyLines.isNotEmpty()) {
-                    appendLine()
-                    appendLine("[CONVERSATION]")
-                    historyLines.forEach { append(it) }
-                }
-                appendLine()
-                appendLine("User: $newMessage")
-                append("Assistant:")
-            }
+            result
         }
 
     private fun showTypingIndicator() {

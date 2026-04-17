@@ -2,23 +2,23 @@ package com.vonnegut.app.inference
 
 import android.content.Context
 import android.util.Log
-import com.google.mediapipe.tasks.core.ErrorListener
-import com.google.mediapipe.tasks.core.OutputHandler
-import com.google.mediapipe.tasks.genai.llminference.LlmInference
+import com.google.ai.edge.litertlm.Backend
+import com.google.ai.edge.litertlm.Contents
+import com.google.ai.edge.litertlm.ConversationConfig
+import com.google.ai.edge.litertlm.Engine
+import com.google.ai.edge.litertlm.EngineConfig
+import com.google.ai.edge.litertlm.Message
+import com.google.ai.edge.litertlm.SamplerConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
-import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Wraps MediaPipe LlmInference.
+ * Wraps LiteRT-LM Engine for on-device inference with Gemma 4 (.litertlm) model files.
  *
- * In tasks-genai 0.10.14 the result listener is registered once at construction time via
- * LlmInferenceOptions.setResultListener; generateResponseAsync(prompt) takes no callback.
- * We route the shared listener to per-call handlers stored in [currentCallbacks].
- *
- * Only one generation may be in flight at a time. ChatViewModel enforces this.
+ * Load the model once with [load]; call [generate] for each inference turn.
+ * Only one generation may be in flight at a time — ChatViewModel enforces this.
  */
 class InferenceEngine {
 
@@ -30,67 +30,34 @@ class InferenceEngine {
         data class Error(val message: String) : State()
     }
 
-    private data class Callbacks(
-        val onToken: (String) -> Unit,
-        val onDone: () -> Unit,
-        val onError: (Exception) -> Unit
-    )
-
     private val _state = MutableStateFlow<State>(State.Idle)
     val state: StateFlow<State> = _state
 
-    private var llmInference: LlmInference? = null
+    private var engine: Engine? = null
     private var loadedModelPath: String? = null
 
-    // Swapped atomically before each generateResponseAsync call
-    private val currentCallbacks = AtomicReference<Callbacks?>(null)
-
-    val isReady: Boolean
-        get() = _state.value is State.Ready
+    val isReady: Boolean get() = _state.value is State.Ready
 
     /**
-     * Load a model. The result and error listeners are wired into the options so they persist
-     * for the lifetime of this LlmInference instance.
-     * Runs on IO dispatcher; suspends until complete.
+     * Load a model from [modelPath]. Suspends on IO until the engine is initialised.
+     * [context] is used for the GPU shader cache directory.
      */
     suspend fun load(
         context: Context,
         modelPath: String,
-        maxTokens: Int,
         temperature: Float
     ) = withContext(Dispatchers.IO) {
         _state.value = State.Loading
         release()
         try {
-            val resultListener = OutputHandler.ProgressListener<String> { partialResult, done ->
-                val cbs = currentCallbacks.get() ?: return@ProgressListener
-                if (partialResult != null && partialResult.isNotEmpty()) {
-                    cbs.onToken(partialResult)
-                }
-                if (done) {
-                    _state.value = State.Ready(loadedModelPath ?: modelPath)
-                    currentCallbacks.set(null)
-                    cbs.onDone()
-                }
-            }
-
-            val errorListener = ErrorListener { e ->
-                val cbs = currentCallbacks.getAndSet(null)
-                _state.value = State.Ready(loadedModelPath ?: modelPath)
-                if (cbs != null) cbs.onError(e) else Log.e(TAG, "Unhandled inference error", e)
-            }
-
-            val options = LlmInference.LlmInferenceOptions.builder()
-                .setModelPath(modelPath)
-                .setMaxTokens(maxTokens)
-                .setTemperature(temperature)
-                .setTopK(40)
-                .setRandomSeed(1)
-                .setResultListener(resultListener)
-                .setErrorListener(errorListener)
-                .build()
-
-            llmInference = LlmInference.createFromOptions(context, options)
+            val engineConfig = EngineConfig(
+                modelPath = modelPath,
+                backend = Backend.CPU(),
+                cacheDir = context.cacheDir.absolutePath
+            )
+            val newEngine = Engine(engineConfig)
+            newEngine.initialize()
+            engine = newEngine
             loadedModelPath = modelPath
             _state.value = State.Ready(modelPath)
             Log.i(TAG, "Model loaded: $modelPath")
@@ -103,43 +70,52 @@ class InferenceEngine {
     }
 
     /**
-     * Start async generation. Results stream back via [onToken]; [onDone] fires once complete.
-     * Callbacks may arrive on a background thread — callers must marshal to Main as needed.
+     * Run a single inference turn. Suspends until the full response is streamed.
+     *
+     * @param systemInstruction  Combined system prompt + user profile + custom instructions.
+     * @param history            Prior turns as (role, content) pairs; role = "user" | "assistant".
+     * @param userMessage        The new user message for this turn.
+     * @param temperature        Sampling temperature.
+     * @param onToken            Called on each streamed token (may arrive on a background thread).
      */
-    fun generateAsync(
-        prompt: String,
-        onToken: (String) -> Unit,
-        onDone: () -> Unit,
-        onError: (Exception) -> Unit
-    ) {
-        val inference = llmInference
-        val modelPath = loadedModelPath
-        if (inference == null || modelPath == null || _state.value !is State.Ready) {
-            onError(IllegalStateException("Model not loaded"))
-            return
-        }
-
-        currentCallbacks.set(Callbacks(onToken, onDone, onError))
+    suspend fun generate(
+        systemInstruction: String,
+        history: List<Pair<String, String>>,
+        userMessage: String,
+        temperature: Float,
+        onToken: (String) -> Unit
+    ) = withContext(Dispatchers.IO) {
+        val eng = engine ?: throw IllegalStateException("Model not loaded")
         _state.value = State.Generating
-
         try {
-            inference.generateResponseAsync(prompt)
+            val historyMessages = history.map { (role, content) ->
+                if (role == "user") Message.user(content) else Message.model(content)
+            }
+            val config = ConversationConfig(
+                systemInstruction = Contents.of(systemInstruction),
+                initialMessages = historyMessages,
+                samplerConfig = SamplerConfig(topK = 40, topP = 0.95f, temperature = temperature)
+            )
+            eng.createConversation(config).use { conversation ->
+                conversation.sendMessageAsync(userMessage).collect { message ->
+                    message.text?.takeIf { it.isNotEmpty() }?.let { onToken(it) }
+                }
+            }
+            _state.value = State.Ready(loadedModelPath!!)
         } catch (e: Exception) {
-            Log.e(TAG, "generateResponseAsync threw: ${e.message}", e)
-            currentCallbacks.set(null)
-            _state.value = State.Ready(modelPath)
-            onError(e)
+            Log.e(TAG, "Inference error: ${e.message}", e)
+            _state.value = State.Ready(loadedModelPath ?: "")
+            throw e
         }
     }
 
     fun release() {
-        currentCallbacks.set(null)
         try {
-            llmInference?.close()
+            engine?.close()
         } catch (e: Exception) {
-            Log.w(TAG, "Error closing LlmInference: ${e.message}")
+            Log.w(TAG, "Error closing Engine: ${e.message}")
         } finally {
-            llmInference = null
+            engine = null
             loadedModelPath = null
             _state.value = State.Idle
         }

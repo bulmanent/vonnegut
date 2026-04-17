@@ -39,8 +39,6 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            // MediaPipe includes native libs; avoid duplicate META-INF entries
-            excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
         }
     }
 }
@@ -72,12 +70,9 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    // MediaPipe LLM Inference
-    // GPU backend selection (LlmInference.Backend.GPU) was not present in 0.10.14's public API.
-    // To enable explicit GPU acceleration, bump this to the version that added Backend enum
-    // (check https://mvnrepository.com/artifact/com.google.mediapipe/tasks-genai for latest).
-    // At 0.10.14, MediaPipe selects the best available accelerator automatically.
-    implementation("com.google.mediapipe:tasks-genai:0.10.14")
+    // LiteRT-LM — on-device LLM inference (Gemma 4 and later use .litertlm model files)
+    // GPU backend: pass Backend.GPU() in EngineConfig; NPU: Backend.NPU(nativeLibraryDir)
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.10.0")
 
     // Networking for model downloads
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
