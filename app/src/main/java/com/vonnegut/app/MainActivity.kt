@@ -3,6 +3,7 @@ package com.vonnegut.app
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.view.isVisible
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.vonnegut.app.databinding.ActivityMainBinding
@@ -30,9 +31,16 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController)
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            supportActionBar?.setDisplayHomeAsUpEnabled(
-                destination.id != R.id.chatFragment
-            )
+            val isChat = destination.id == R.id.chatFragment
+            supportActionBar?.setDisplayHomeAsUpEnabled(!isChat)
+            binding.toolbarModelSelector.isVisible = isChat
+            binding.toolbar.title = if (isChat) "" else destination.label?.toString().orEmpty()
+            binding.toolbar.subtitle = null
+            if (!isChat) {
+                binding.toolbar.setNavigationOnClickListener {
+                    navController.navigateUp()
+                }
+            }
         }
     }
 
