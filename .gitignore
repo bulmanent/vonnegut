@@ -1,0 +1,18 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Model files — never commit
+*.task
+*.tflite
+*.bin
+
+# Gradle wrapper jar (regenerate with: gradle wrapper)
+gradle/wrapper/gradle-wrapper.jar

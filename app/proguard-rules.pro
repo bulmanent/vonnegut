@@ -1,0 +1,4 @@
+-keep class com.google.mediapipe.** { *; }
+-keep class com.vonnegut.app.data.db.** { *; }
+-keep class com.vonnegut.app.ui.model.AvailableModel { *; }
+-keep class com.vonnegut.app.ui.model.ModelManifest { *; }
