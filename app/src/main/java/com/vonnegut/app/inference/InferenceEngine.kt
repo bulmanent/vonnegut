@@ -3,6 +3,7 @@ package com.vonnegut.app.inference
 import android.content.Context
 import android.util.Log
 import com.google.ai.edge.litertlm.Backend
+import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
@@ -94,11 +95,14 @@ class InferenceEngine {
             val config = ConversationConfig(
                 systemInstruction = Contents.of(systemInstruction),
                 initialMessages = historyMessages,
-                samplerConfig = SamplerConfig(topK = 40, topP = 0.95f, temperature = temperature)
+                samplerConfig = SamplerConfig(topK = 40, topP = 0.95, temperature = temperature.toDouble())
             )
             eng.createConversation(config).use { conversation ->
                 conversation.sendMessageAsync(userMessage).collect { message ->
-                    message.text?.takeIf { it.isNotEmpty() }?.let { onToken(it) }
+                    val text = message.contents.contents
+                        .filterIsInstance<Content.Text>()
+                        .joinToString("") { it.text }
+                    if (text.isNotEmpty()) onToken(text)
                 }
             }
             _state.value = State.Ready(loadedModelPath!!)
