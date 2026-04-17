@@ -1,0 +1,138 @@
+[
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/layout_fragment_installed_models.xml.flat",
+        "source": "com.vonnegut.app-main-56:/layout/fragment_installed_models.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/anim_slide_in_left.xml.flat",
+        "source": "com.vonnegut.app-main-56:/anim/slide_in_left.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/layout_fragment_available_models.xml.flat",
+        "source": "com.vonnegut.app-main-56:/layout/fragment_available_models.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/mipmap-hdpi_ic_launcher.xml.flat",
+        "source": "com.vonnegut.app-main-56:/mipmap-hdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/layout_item_message_assistant.xml.flat",
+        "source": "com.vonnegut.app-main-56:/layout/item_message_assistant.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/mipmap-xhdpi_ic_launcher_round.xml.flat",
+        "source": "com.vonnegut.app-main-56:/mipmap-xhdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/layout_fragment_chat.xml.flat",
+        "source": "com.vonnegut.app-main-56:/layout/fragment_chat.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/mipmap-mdpi_ic_launcher_round.xml.flat",
+        "source": "com.vonnegut.app-main-56:/mipmap-mdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/mipmap-xhdpi_ic_launcher.xml.flat",
+        "source": "com.vonnegut.app-main-56:/mipmap-xhdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/layout_item_installed_model.xml.flat",
+        "source": "com.vonnegut.app-main-56:/layout/item_installed_model.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/drawable_bg_message_assistant.xml.flat",
+        "source": "com.vonnegut.app-main-56:/drawable/bg_message_assistant.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/mipmap-mdpi_ic_launcher.xml.flat",
+        "source": "com.vonnegut.app-main-56:/mipmap-mdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/anim_slide_out_right.xml.flat",
+        "source": "com.vonnegut.app-main-56:/anim/slide_out_right.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/layout_item_available_model.xml.flat",
+        "source": "com.vonnegut.app-main-56:/layout/item_available_model.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/layout_fragment_sessions.xml.flat",
+        "source": "com.vonnegut.app-main-56:/layout/fragment_sessions.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/layout_fragment_model_manager.xml.flat",
+        "source": "com.vonnegut.app-main-56:/layout/fragment_model_manager.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/mipmap-xxhdpi_ic_launcher.xml.flat",
+        "source": "com.vonnegut.app-main-56:/mipmap-xxhdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/mipmap-xxxhdpi_ic_launcher_round.xml.flat",
+        "source": "com.vonnegut.app-main-56:/mipmap-xxxhdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/layout_activity_main.xml.flat",
+        "source": "com.vonnegut.app-main-56:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/mipmap-hdpi_ic_launcher_round.xml.flat",
+        "source": "com.vonnegut.app-main-56:/mipmap-hdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/mipmap-xxxhdpi_ic_launcher.xml.flat",
+        "source": "com.vonnegut.app-main-56:/mipmap-xxxhdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/navigation_nav_graph.xml.flat",
+        "source": "com.vonnegut.app-main-56:/navigation/nav_graph.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/drawable_ic_mic_active.xml.flat",
+        "source": "com.vonnegut.app-main-56:/drawable/ic_mic_active.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/layout_item_message_user.xml.flat",
+        "source": "com.vonnegut.app-main-56:/layout/item_message_user.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/drawable_ic_mic.xml.flat",
+        "source": "com.vonnegut.app-main-56:/drawable/ic_mic.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/layout_fragment_settings.xml.flat",
+        "source": "com.vonnegut.app-main-56:/layout/fragment_settings.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/anim_slide_in_right.xml.flat",
+        "source": "com.vonnegut.app-main-56:/anim/slide_in_right.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/anim_slide_out_left.xml.flat",
+        "source": "com.vonnegut.app-main-56:/anim/slide_out_left.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.vonnegut.app-main-56:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/menu_menu_chat.xml.flat",
+        "source": "com.vonnegut.app-main-56:/menu/menu_chat.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/mipmap-xxhdpi_ic_launcher_round.xml.flat",
+        "source": "com.vonnegut.app-main-56:/mipmap-xxhdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.vonnegut.app-main-56:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/drawable_bg_message_user.xml.flat",
+        "source": "com.vonnegut.app-main-56:/drawable/bg_message_user.xml"
+    },
+    {
+        "merged": "com.vonnegut.app-merged_res-54:/layout_item_session.xml.flat",
+        "source": "com.vonnegut.app-main-56:/layout/item_session.xml"
+    }
+]

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="md_theme_dark_background">#131318</color>
+    <color name="md_theme_dark_onBackground">#E4E1EC</color>
+    <color name="md_theme_dark_onPrimary">#2D1F6E</color>
+    <color name="md_theme_dark_onPrimaryContainer">#E4DEFF</color>
+    <color name="md_theme_dark_onSecondary">#332E4B</color>
+    <color name="md_theme_dark_onSecondaryContainer">#E7E3FD</color>
+    <color name="md_theme_dark_onSurface">#E4E1EC</color>
+    <color name="md_theme_dark_onSurfaceVariant">#C8C5D0</color>
+    <color name="md_theme_dark_outline">#928F9A</color>
+    <color name="md_theme_dark_outlineVariant">#47464F</color>
+    <color name="md_theme_dark_primary">#C8B8F5</color>
+    <color name="md_theme_dark_primaryContainer">#443886</color>
+    <color name="md_theme_dark_secondary">#CBC8E2</color>
+    <color name="md_theme_dark_secondaryContainer">#4A4563</color>
+    <color name="md_theme_dark_surface">#131318</color>
+    <color name="md_theme_dark_surfaceVariant">#47464F</color>
+    <color name="md_theme_light_background">#FFFBFF</color>
+    <color name="md_theme_light_onBackground">#1C1B1F</color>
+    <color name="md_theme_light_onPrimary">#FFFFFF</color>
+    <color name="md_theme_light_onPrimaryContainer">#160561</color>
+    <color name="md_theme_light_onSecondary">#FFFFFF</color>
+    <color name="md_theme_light_onSecondaryContainer">#1E1836</color>
+    <color name="md_theme_light_onSurface">#1C1B1F</color>
+    <color name="md_theme_light_onSurfaceVariant">#48454E</color>
+    <color name="md_theme_light_outline">#79757F</color>
+    <color name="md_theme_light_outlineVariant">#CAC4D0</color>
+    <color name="md_theme_light_primary">#5B4CA8</color>
+    <color name="md_theme_light_primaryContainer">#E4DEFF</color>
+    <color name="md_theme_light_secondary">#625B7E</color>
+    <color name="md_theme_light_secondaryContainer">#E7E3FD</color>
+    <color name="md_theme_light_surface">#FFFBFF</color>
+    <color name="md_theme_light_surfaceVariant">#E5E0EC</color>
+    <string name="app_name">Vonnegut</string>
+    <style name="Theme.Vonnegut" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/md_theme_light_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_light_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/md_theme_light_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_light_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/md_theme_light_secondary</item>
+        <item name="colorOnSecondary">@color/md_theme_light_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/md_theme_light_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/md_theme_light_onSecondaryContainer</item>
+        <item name="android:colorBackground">@color/md_theme_light_background</item>
+        <item name="colorOnBackground">@color/md_theme_light_onBackground</item>
+        <item name="colorSurface">@color/md_theme_light_surface</item>
+        <item name="colorOnSurface">@color/md_theme_light_onSurface</item>
+        <item name="colorSurfaceVariant">@color/md_theme_light_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/md_theme_light_onSurfaceVariant</item>
+        <item name="colorOutline">@color/md_theme_light_outline</item>
+        <item name="colorOutlineVariant">@color/md_theme_light_outlineVariant</item>
+    </style>
+</resources>
