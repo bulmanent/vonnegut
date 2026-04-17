@@ -9,6 +9,12 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_transcribe"
+        android:title="Transcribe"
+        android:icon="@drawable/ic_mic"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/action_rename"
         android:title="Rename session"
         app:showAsAction="never" />

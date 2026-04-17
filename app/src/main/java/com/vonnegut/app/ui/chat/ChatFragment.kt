@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.*
-import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -30,6 +29,8 @@ class ChatFragment : Fragment() {
     private val viewModel: ChatViewModel by viewModels()
     private lateinit var messageAdapter: MessageAdapter
     private lateinit var speechManager: SpeechInputManager
+    private var isToolbarMicListening = false
+    private var isToolbarMicEnabled = true
 
     private val requestMicPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -77,56 +78,57 @@ class ChatFragment : Fragment() {
 
     private fun setupInput() {
         binding.buttonSend.setOnClickListener { sendMessage() }
-
-        binding.editInput.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEND) {
-                sendMessage()
-                true
-            } else false
-        }
-
-        binding.buttonMic.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO)
-                == PackageManager.PERMISSION_GRANTED
-            ) {
-                startVoiceInput()
-            } else {
-                requestMicPermission.launch(Manifest.permission.RECORD_AUDIO)
-            }
-        }
     }
 
     private fun setupSpeech() {
         speechManager = SpeechInputManager(requireContext())
         speechManager.setListener(object : SpeechInputManager.Listener {
             override fun onListeningStarted() {
-                binding.buttonMic.setImageResource(R.drawable.ic_mic_active)
+                isToolbarMicListening = true
+                requireActivity().invalidateOptionsMenu()
+                Toast.makeText(requireContext(), "Listening… tap the mic again to stop.", Toast.LENGTH_SHORT).show()
             }
 
             override fun onPartialResult(text: String) {
-                binding.editInput.setText(text)
-                binding.editInput.setSelection(text.length)
+                // Keep partials out of the draft to avoid clobbering manual edits.
             }
 
             override fun onResult(text: String) {
-                binding.editInput.setText(text)
-                binding.editInput.setSelection(text.length)
-                binding.buttonMic.setImageResource(R.drawable.ic_mic)
+                insertTranscription(text)
+                isToolbarMicListening = false
+                requireActivity().invalidateOptionsMenu()
             }
 
             override fun onError(message: String) {
-                binding.buttonMic.setImageResource(R.drawable.ic_mic)
+                isToolbarMicListening = false
+                requireActivity().invalidateOptionsMenu()
                 Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
             }
 
             override fun onListeningStopped() {
-                binding.buttonMic.setImageResource(R.drawable.ic_mic)
+                isToolbarMicListening = false
+                requireActivity().invalidateOptionsMenu()
             }
         })
     }
 
     private fun startVoiceInput() {
         speechManager.startListening()
+    }
+
+    private fun toggleVoiceInput() {
+        if (speechManager.isListening()) {
+            speechManager.stopListening()
+            return
+        }
+
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            startVoiceInput()
+        } else {
+            requestMicPermission.launch(Manifest.permission.RECORD_AUDIO)
+        }
     }
 
     private fun sendMessage() {
@@ -165,6 +167,8 @@ class ChatFragment : Fragment() {
             is ChatUiState.NoModel -> {
                 binding.inputArea.isVisible = false
                 binding.statusBar.isVisible = true
+                isToolbarMicEnabled = false
+                requireActivity().invalidateOptionsMenu()
                 binding.statusText.text =
                     "No model loaded. Import a .litertlm model, scan a model folder, or download one below."
                 binding.statusActionButton.isVisible = true
@@ -178,6 +182,8 @@ class ChatFragment : Fragment() {
             is ChatUiState.ModelLoading -> {
                 binding.inputArea.isVisible = false
                 binding.statusBar.isVisible = true
+                isToolbarMicEnabled = false
+                requireActivity().invalidateOptionsMenu()
                 binding.statusText.text = "Loading model…"
                 binding.statusActionButton.isVisible = false
             }
@@ -185,18 +191,22 @@ class ChatFragment : Fragment() {
                 binding.inputArea.isVisible = true
                 binding.statusBar.isVisible = false
                 binding.buttonSend.isEnabled = true
-                binding.buttonMic.isEnabled = true
                 binding.editInput.isEnabled = true
+                isToolbarMicEnabled = true
+                requireActivity().invalidateOptionsMenu()
             }
             is ChatUiState.Generating -> {
                 binding.inputArea.isVisible = true
                 binding.statusBar.isVisible = false
                 binding.buttonSend.isEnabled = false
-                binding.buttonMic.isEnabled = false
+                isToolbarMicEnabled = false
+                requireActivity().invalidateOptionsMenu()
             }
             is ChatUiState.LoadError -> {
                 binding.inputArea.isVisible = false
                 binding.statusBar.isVisible = true
+                isToolbarMicEnabled = false
+                requireActivity().invalidateOptionsMenu()
                 binding.statusText.text = "Failed to load model: ${state.message}"
                 binding.statusActionButton.isVisible = true
                 binding.statusActionButton.text = "Manage Models"
@@ -215,9 +225,22 @@ class ChatFragment : Fragment() {
     }
 
     @Deprecated("Deprecated in Java")
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        menu.findItem(R.id.action_transcribe)?.apply {
+            isEnabled = isToolbarMicEnabled
+            setIcon(if (isToolbarMicListening) R.drawable.ic_mic_active else R.drawable.ic_mic)
+        }
+        super.onPrepareOptionsMenu(menu)
+    }
+
+    @Deprecated("Deprecated in Java")
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
         R.id.action_sessions -> {
             findNavController().navigate(R.id.action_chat_to_sessions)
+            true
+        }
+        R.id.action_transcribe -> {
+            toggleVoiceInput()
             true
         }
         R.id.action_rename -> {
@@ -260,5 +283,24 @@ class ChatFragment : Fragment() {
         super.onDestroyView()
         speechManager.destroy()
         _binding = null
+    }
+
+    private fun insertTranscription(text: String) {
+        val cleaned = text.trim()
+        if (cleaned.isEmpty()) return
+
+        binding.editInput.requestFocus()
+        val editable = binding.editInput.editableText
+
+        val selectionStart = binding.editInput.selectionStart.coerceAtLeast(0)
+        val needsLeadingSpace = selectionStart > 0 &&
+            editable.getOrNull(selectionStart - 1)?.isWhitespace() == false
+        val insertion = buildString {
+            if (needsLeadingSpace) append(' ')
+            append(cleaned)
+        }
+
+        editable.insert(selectionStart, insertion)
+        binding.editInput.setSelection((selectionStart + insertion.length).coerceAtMost(editable.length))
     }
 }

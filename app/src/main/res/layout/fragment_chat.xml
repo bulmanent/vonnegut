@@ -56,8 +56,11 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp"
-        android:gravity="center_vertical"
+        android:gravity="bottom"
+        android:paddingStart="8dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -73,28 +76,23 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Message"
-                android:maxLines="6"
-                android:imeOptions="actionSend"
-                android:inputType="textMultiLine|textCapSentences" />
+                android:gravity="top|start"
+                android:imeOptions="flagNoEnterAction"
+                android:inputType="textMultiLine|textCapSentences"
+                android:minLines="3"
+                android:maxLines="8" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
         <ImageButton
-            android:id="@+id/button_mic"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="4dp"
-            android:contentDescription="Voice input"
-            android:src="@drawable/ic_mic"
-            android:background="?attr/selectableItemBackgroundBorderless" />
-
-        <com.google.android.material.button.MaterialButton
             android:id="@+id/button_send"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:text="Send"
-            style="@style/Widget.Material3.Button.TonalButton" />
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginBottom="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Send message"
+            android:src="@drawable/ic_send" />
 
     </LinearLayout>
 

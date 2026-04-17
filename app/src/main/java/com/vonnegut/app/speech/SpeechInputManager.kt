@@ -31,6 +31,8 @@ class SpeechInputManager(private val context: Context) {
 
     fun isAvailable(): Boolean = SpeechRecognizer.isRecognitionAvailable(context)
 
+    fun isListening(): Boolean = isListening
+
     fun setListener(l: Listener) {
         listener = l
     }
@@ -52,6 +54,9 @@ class SpeechInputManager(private val context: Context) {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1500L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1200L)
         }
 
         recognizer?.startListening(intent)
