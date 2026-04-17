@@ -73,6 +73,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     // MediaPipe LLM Inference
+    // GPU backend selection (LlmInference.Backend.GPU) was not present in 0.10.14's public API.
+    // To enable explicit GPU acceleration, bump this to the version that added Backend enum
+    // (check https://mvnrepository.com/artifact/com.google.mediapipe/tasks-genai for latest).
+    // At 0.10.14, MediaPipe selects the best available accelerator automatically.
     implementation("com.google.mediapipe:tasks-genai:0.10.14")
 
     // Networking for model downloads

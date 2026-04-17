@@ -49,15 +49,25 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private var messagesJob: kotlinx.coroutines.Job? = null
 
     fun initialise() {
+        // Called from onViewCreated and onResume — must be safe to call multiple times.
+        // Skip if a load is already in progress.
+        if (_uiState.value is ChatUiState.ModelLoading) return
+
         val modelPath = prefs.activeModelPath
         if (modelPath == null) {
             _uiState.value = ChatUiState.NoModel
             return
         }
+
         when (val engineState = inferenceEngine.state.value) {
             is InferenceEngine.State.Ready -> {
-                _uiState.value = ChatUiState.Ready
-                ensureSession()
+                // If the active model path changed (user swapped models), reload.
+                if (engineState.modelPath != modelPath) {
+                    loadModel(modelPath)
+                } else {
+                    _uiState.value = ChatUiState.Ready
+                    ensureSession()
+                }
             }
             is InferenceEngine.State.Loading,
             is InferenceEngine.State.Generating -> {
@@ -68,7 +78,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 loadModel(modelPath)
             }
             is InferenceEngine.State.Error -> {
-                _uiState.value = ChatUiState.LoadError(engineState.message)
+                // Retry on resume in case the user fixed the model file
+                loadModel(modelPath)
             }
         }
     }

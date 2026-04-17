@@ -34,8 +34,8 @@ class ChatFragment : Fragment() {
     private val requestMicPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (granted) startVoiceInput() else
-            Toast.makeText(requireContext(), "Microphone permission required for voice input.", Toast.LENGTH_SHORT).show()
+        if (granted) startVoiceInput()
+        else Toast.makeText(requireContext(), "Microphone permission required for voice input.", Toast.LENGTH_SHORT).show()
     }
 
     override fun onCreateView(
@@ -55,6 +55,13 @@ class ChatFragment : Fragment() {
         setupSpeech()
         observeViewModel()
 
+        viewModel.initialise()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Re-check model state every time the fragment is visible. This handles the case
+        // where the user selects a model in the Model Manager and navigates back here.
         viewModel.initialise()
     }
 
@@ -133,15 +140,13 @@ class ChatFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel.uiState.collect { state ->
-                        handleUiState(state)
-                    }
+                    viewModel.uiState.collect { state -> handleUiState(state) }
                 }
                 launch {
                     viewModel.messages.collect { messages ->
                         messageAdapter.submitList(messages) {
                             if (messages.isNotEmpty()) {
-                                binding.recyclerMessages.smoothScrollToPosition(messages.size - 1)
+                                binding.recyclerMessages.scrollToPosition(messages.size - 1)
                             }
                         }
                     }
@@ -160,11 +165,12 @@ class ChatFragment : Fragment() {
             is ChatUiState.NoModel -> {
                 binding.inputArea.isVisible = false
                 binding.statusBar.isVisible = true
-                binding.statusText.text = "No model loaded. Go to Settings to select a model."
+                binding.statusText.text =
+                    "No model loaded. Copy a .task file to the app's models folder, or download one below."
                 binding.statusActionButton.isVisible = true
-                binding.statusActionButton.text = "Open Settings"
+                binding.statusActionButton.text = "Manage Models"
                 binding.statusActionButton.setOnClickListener {
-                    findNavController().navigate(R.id.action_chat_to_settings)
+                    findNavController().navigate(R.id.action_chat_to_model_manager)
                 }
             }
             is ChatUiState.ModelLoading -> {
@@ -189,11 +195,11 @@ class ChatFragment : Fragment() {
             is ChatUiState.LoadError -> {
                 binding.inputArea.isVisible = false
                 binding.statusBar.isVisible = true
-                binding.statusText.text = "Error: ${state.message}"
+                binding.statusText.text = "Failed to load model: ${state.message}"
                 binding.statusActionButton.isVisible = true
-                binding.statusActionButton.text = "Open Settings"
+                binding.statusActionButton.text = "Manage Models"
                 binding.statusActionButton.setOnClickListener {
-                    findNavController().navigate(R.id.action_chat_to_settings)
+                    findNavController().navigate(R.id.action_chat_to_model_manager)
                 }
             }
         }
@@ -231,8 +237,8 @@ class ChatFragment : Fragment() {
             .setTitle("Rename session")
             .setView(input)
             .setPositiveButton("Rename") { _, _ ->
-                val newName = input.text.toString().trim()
-                if (newName.isNotEmpty()) viewModel.renameCurrentSession(newName)
+                val name = input.text.toString().trim()
+                if (name.isNotEmpty()) viewModel.renameCurrentSession(name)
             }
             .setNegativeButton("Cancel", null)
             .show()

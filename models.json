@@ -2,20 +2,28 @@
   "updated": "2026-04-17",
   "models": [
     {
-      "name": "Gemma 3 1B (INT4)",
+      "name": "Gemma 3n E2B IT (INT4) — Recommended",
+      "filename": "gemma3n-e2b-it-int4.task",
+      "size_mb": 1100,
+      "url": "https://huggingface.co/litert-community/Gemma3n-E2B-IT/resolve/main/gemma3n-e2b-it-int4.task",
+      "quantization": "INT4",
+      "notes": "Current mobile SOTA. Effective 2B parameters, optimised for edge devices. Best speed/quality trade-off on-device."
+    },
+    {
+      "name": "Gemma 3n E4B IT (INT4)",
+      "filename": "gemma3n-e4b-it-int4.task",
+      "size_mb": 2000,
+      "url": "https://huggingface.co/litert-community/Gemma3n-E4B-IT/resolve/main/gemma3n-e4b-it-int4.task",
+      "quantization": "INT4",
+      "notes": "Effective 4B parameters. Higher quality than E2B, requires more RAM. Good for high-end devices."
+    },
+    {
+      "name": "Gemma 3 1B IT (INT4) — Lightweight",
       "filename": "gemma3-1b-it-int4.task",
       "size_mb": 520,
       "url": "https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.task",
       "quantization": "INT4",
-      "notes": "Recommended for most devices. Fast, low memory."
-    },
-    {
-      "name": "Gemma 2 2B (INT4)",
-      "filename": "gemma2-2b-it-gpu-int4.task",
-      "size_mb": 1500,
-      "url": "https://huggingface.co/litert-community/Gemma2-2B-IT/resolve/main/gemma2-2b-it-gpu-int4.task",
-      "quantization": "INT4",
-      "notes": "Higher quality. Requires a capable device."
+      "notes": "Very fast, minimal memory. Good fallback for older or low-RAM devices."
     }
   ]
 }
