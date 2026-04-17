@@ -2,19 +2,23 @@ package com.vonnegut.app.inference
 
 import android.content.Context
 import android.util.Log
+import com.google.mediapipe.tasks.core.ErrorListener
+import com.google.mediapipe.tasks.core.OutputHandler
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Wraps MediaPipe LlmInference. One model is active at a time.
+ * Wraps MediaPipe LlmInference.
  *
- * generateAsync streams partial tokens via [onToken]; [onDone] fires when complete.
- * Callbacks may arrive on a background thread — callers must marshal to Main if needed.
+ * In tasks-genai 0.10.14 the result listener is registered once at construction time via
+ * LlmInferenceOptions.setResultListener; generateResponseAsync(prompt) takes no callback.
+ * We route the shared listener to per-call handlers stored in [currentCallbacks].
  *
- * NOTE: LlmInference does not support concurrent requests. ChatViewModel serialises calls.
+ * Only one generation may be in flight at a time. ChatViewModel enforces this.
  */
 class InferenceEngine {
 
@@ -26,17 +30,27 @@ class InferenceEngine {
         data class Error(val message: String) : State()
     }
 
+    private data class Callbacks(
+        val onToken: (String) -> Unit,
+        val onDone: () -> Unit,
+        val onError: (Exception) -> Unit
+    )
+
     private val _state = MutableStateFlow<State>(State.Idle)
     val state: StateFlow<State> = _state
 
     private var llmInference: LlmInference? = null
     private var loadedModelPath: String? = null
 
+    // Swapped atomically before each generateResponseAsync call
+    private val currentCallbacks = AtomicReference<Callbacks?>(null)
+
     val isReady: Boolean
         get() = _state.value is State.Ready
 
     /**
-     * Load a model. Releases any previously loaded model first.
+     * Load a model. The result and error listeners are wired into the options so they persist
+     * for the lifetime of this LlmInference instance.
      * Runs on IO dispatcher; suspends until complete.
      */
     suspend fun load(
@@ -48,13 +62,34 @@ class InferenceEngine {
         _state.value = State.Loading
         release()
         try {
+            val resultListener = OutputHandler.ProgressListener<String> { partialResult, done ->
+                val cbs = currentCallbacks.get() ?: return@ProgressListener
+                if (partialResult != null && partialResult.isNotEmpty()) {
+                    cbs.onToken(partialResult)
+                }
+                if (done) {
+                    _state.value = State.Ready(loadedModelPath ?: modelPath)
+                    currentCallbacks.set(null)
+                    cbs.onDone()
+                }
+            }
+
+            val errorListener = ErrorListener { e ->
+                val cbs = currentCallbacks.getAndSet(null)
+                _state.value = State.Ready(loadedModelPath ?: modelPath)
+                cbs?.onError(e) ?: Log.e(TAG, "Unhandled inference error", e)
+            }
+
             val options = LlmInference.LlmInferenceOptions.builder()
                 .setModelPath(modelPath)
                 .setMaxTokens(maxTokens)
                 .setTemperature(temperature)
-                .setRandomSeed(1)
                 .setTopK(40)
+                .setRandomSeed(1)
+                .setResultListener(resultListener)
+                .setErrorListener(errorListener)
                 .build()
+
             llmInference = LlmInference.createFromOptions(context, options)
             loadedModelPath = modelPath
             _state.value = State.Ready(modelPath)
@@ -68,9 +103,8 @@ class InferenceEngine {
     }
 
     /**
-     * Generate a response asynchronously with token streaming.
-     * [onToken] is called per partial token (may be on a background thread).
-     * [onDone] and [onError] are called exactly once, on a background thread.
+     * Start async generation. Results stream back via [onToken]; [onDone] fires once complete.
+     * Callbacks may arrive on a background thread — callers must marshal to Main as needed.
      */
     fun generateAsync(
         prompt: String,
@@ -85,26 +119,21 @@ class InferenceEngine {
             return
         }
 
+        currentCallbacks.set(Callbacks(onToken, onDone, onError))
         _state.value = State.Generating
 
         try {
-            inference.generateAsync(prompt) { partialResult, done ->
-                if (partialResult != null) {
-                    onToken(partialResult)
-                }
-                if (done) {
-                    _state.value = State.Ready(modelPath)
-                    onDone()
-                }
-            }
+            inference.generateResponseAsync(prompt)
         } catch (e: Exception) {
-            Log.e(TAG, "Inference error: ${e.message}", e)
+            Log.e(TAG, "generateResponseAsync threw: ${e.message}", e)
+            currentCallbacks.set(null)
             _state.value = State.Ready(modelPath)
             onError(e)
         }
     }
 
     fun release() {
+        currentCallbacks.set(null)
         try {
             llmInference?.close()
         } catch (e: Exception) {
