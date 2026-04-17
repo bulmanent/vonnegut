@@ -3,7 +3,6 @@ package com.vonnegut.app.ui.settings
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -50,7 +49,6 @@ class SettingsFragment : Fragment() {
                         binding.editContextWindow.setText(state.contextWindowLimit.toString())
                         binding.editMaxTokens.setText(state.maxResponseTokens.toString())
                         binding.sliderTemperature.value = state.temperature
-                        binding.switchDarkTheme.isChecked = state.darkTheme
                         binding.editSystemPrompt.tag = "populated"
                     }
                     binding.textActiveModelPath.text =
@@ -100,7 +98,6 @@ class SettingsFragment : Fragment() {
             return
         }
 
-        val darkTheme = binding.switchDarkTheme.isChecked
         viewModel.saveAll(
             systemPrompt = binding.editSystemPrompt.text.toString(),
             customInstructions = binding.editCustomInstructions.text.toString(),
@@ -113,13 +110,7 @@ class SettingsFragment : Fragment() {
             userTone = binding.editUserTone.text.toString(),
             contextWindowLimit = contextWindow,
             maxResponseTokens = maxTokens,
-            temperature = binding.sliderTemperature.value,
-            darkTheme = darkTheme
-        )
-
-        AppCompatDelegate.setDefaultNightMode(
-            if (darkTheme) AppCompatDelegate.MODE_NIGHT_YES
-            else AppCompatDelegate.MODE_NIGHT_NO
+            temperature = binding.sliderTemperature.value
         )
 
         Toast.makeText(requireContext(), "Settings saved.", Toast.LENGTH_SHORT).show()

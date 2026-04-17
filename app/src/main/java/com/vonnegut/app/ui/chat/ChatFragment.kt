@@ -310,9 +310,7 @@ class ChatFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        val toolbar = requireActivity().findViewById<Toolbar>(R.id.toolbar)
         requireActivity().findViewById<View>(R.id.toolbar_model_selector).isVisible = false
-        toolbar.setNavigationOnClickListener(null)
         speechManager.destroy()
         _binding = null
     }

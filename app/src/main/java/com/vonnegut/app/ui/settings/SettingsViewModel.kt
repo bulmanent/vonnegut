@@ -20,7 +20,6 @@ data class SettingsState(
     val contextWindowLimit: Int,
     val maxResponseTokens: Int,
     val temperature: Float,
-    val darkTheme: Boolean,
     val activeModelPath: String?,
     val modelsDirectoryPath: String,
     val sourceDirectoryUri: String?
@@ -46,7 +45,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         contextWindowLimit = prefs.contextWindowLimit,
         maxResponseTokens = prefs.maxResponseTokens,
         temperature = prefs.temperature,
-        darkTheme = prefs.darkTheme,
         activeModelPath = prefs.activeModelPath,
         modelsDirectoryPath = appModelsDirectory(),
         sourceDirectoryUri = prefs.modelSourceTreeUri
@@ -71,8 +69,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         userTone: String,
         contextWindowLimit: Int,
         maxResponseTokens: Int,
-        temperature: Float,
-        darkTheme: Boolean
+        temperature: Float
     ) {
         prefs.systemPrompt = systemPrompt
         prefs.customInstructions = customInstructions
@@ -86,7 +83,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         prefs.contextWindowLimit = contextWindowLimit
         prefs.maxResponseTokens = maxResponseTokens
         prefs.temperature = temperature
-        prefs.darkTheme = darkTheme
         _state.value = loadState()
     }
 
