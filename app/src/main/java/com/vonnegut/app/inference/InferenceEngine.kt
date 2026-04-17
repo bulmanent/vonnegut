@@ -77,7 +77,7 @@ class InferenceEngine {
             val errorListener = ErrorListener { e ->
                 val cbs = currentCallbacks.getAndSet(null)
                 _state.value = State.Ready(loadedModelPath ?: modelPath)
-                cbs?.onError(e) ?: Log.e(TAG, "Unhandled inference error", e)
+                if (cbs != null) cbs.onError(e) else Log.e(TAG, "Unhandled inference error", e)
             }
 
             val options = LlmInference.LlmInferenceOptions.builder()
