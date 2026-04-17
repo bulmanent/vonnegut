@@ -2,36 +2,4 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <item
-        android:id="@+id/action_sessions"
-        android:title="Sessions"
-        android:icon="@android:drawable/ic_menu_agenda"
-        app:showAsAction="ifRoom" />
-
-    <item
-        android:id="@+id/action_transcribe"
-        android:title="Transcribe"
-        android:icon="@drawable/ic_mic"
-        app:showAsAction="ifRoom" />
-
-    <item
-        android:id="@+id/action_rename"
-        android:title="Rename session"
-        app:showAsAction="never" />
-
-    <item
-        android:id="@+id/action_models"
-        android:title="Models"
-        app:showAsAction="never" />
-
-    <item
-        android:id="@+id/action_settings"
-        android:title="Settings"
-        app:showAsAction="never" />
-
-    <item
-        android:id="@+id/action_new_session"
-        android:title="New session"
-        app:showAsAction="never" />
-
 </menu>

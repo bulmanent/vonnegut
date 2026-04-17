@@ -2,6 +2,9 @@ package com.vonnegut.app.ui.chat
 
 import android.app.Application
 import android.util.Log
+import com.google.ai.edge.litertlm.Content
+import com.google.ai.edge.litertlm.Contents
+import com.google.ai.edge.litertlm.Message as LiteRtMessage
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.vonnegut.app.VonnegutApplication
@@ -45,6 +48,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _currentSession = MutableStateFlow<Session?>(null)
     val currentSession: StateFlow<Session?> = _currentSession
+
+    val recentSessions: StateFlow<List<Session>> = repository.getAllSessions()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private var messagesJob: kotlinx.coroutines.Job? = null
 
@@ -158,6 +164,15 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun setActiveModelPath(modelPath: String) {
+        if (prefs.activeModelPath == modelPath) return
+        prefs.activeModelPath = modelPath
+        viewModelScope.launch {
+            inferenceEngine.release()
+            initialise()
+        }
+    }
+
     fun renameCurrentSession(name: String) {
         val session = _currentSession.value ?: return
         viewModelScope.launch {
@@ -166,22 +181,24 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun sendMessage(text: String) {
+    fun sendMessage(text: String, attachments: List<ChatAttachment>) {
         val trimmed = text.trim()
-        if (trimmed.isEmpty()) return
+        if (trimmed.isEmpty() && attachments.isEmpty()) return
         if (_uiState.value is ChatUiState.Generating) return
         if (_uiState.value !is ChatUiState.Ready) return
 
         val session = _currentSession.value ?: return
 
         viewModelScope.launch {
+            val persistedUserContent = buildPersistedUserMessageContent(trimmed, attachments)
             // Persist user message
             repository.insertMessage(
-                Message(sessionId = session.id, role = Role.USER, content = trimmed)
+                Message(sessionId = session.id, role = Role.USER, content = persistedUserContent)
             )
 
             val systemInstruction = buildSystemInstruction()
             val history = buildHistory(session.id)
+            val currentTurnContents = buildCurrentTurnContents(trimmed, attachments)
 
             _uiState.value = ChatUiState.Generating
             showTypingIndicator()
@@ -192,7 +209,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 inferenceEngine.generate(
                     systemInstruction = systemInstruction,
                     history = history,
-                    userMessage = trimmed,
+                    userMessage = currentTurnContents,
                     temperature = prefs.temperature,
                     onToken = { token ->
                         accumulator.append(token)
@@ -225,22 +242,68 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }.trim()
     }
 
-    private suspend fun buildHistory(sessionId: Long): List<Pair<String, String>> =
+    private suspend fun buildHistory(sessionId: Long): List<LiteRtMessage> =
         withContext(Dispatchers.Default) {
             val allMessages = repository.getMessagesSync(sessionId)
             // Drop the user message we just inserted (it's the last one)
             val history = allMessages.dropLast(1)
             // Apply a character budget so we don't pass unbounded context
             val budgetChars = prefs.contextWindowLimit * 4
-            val result = mutableListOf<Pair<String, String>>()
+            val result = mutableListOf<LiteRtMessage>()
             var spent = 0
             for (msg in history.asReversed()) {
                 if (spent + msg.content.length > budgetChars) break
-                result.add(0, Pair(msg.role, msg.content))
+                result.add(
+                    0,
+                    if (msg.role == Role.USER) LiteRtMessage.user(msg.content) else LiteRtMessage.model(msg.content)
+                )
                 spent += msg.content.length
             }
             result
         }
+
+    private fun buildCurrentTurnContents(
+        text: String,
+        attachments: List<ChatAttachment>
+    ): Contents {
+        val contents = mutableListOf<Content>()
+
+        attachments.forEach { attachment ->
+            when (attachment) {
+                is ChatAttachment.Image ->
+                    contents += Content.ImageFile(attachment.absolutePath)
+                is ChatAttachment.TextDocument ->
+                    contents += Content.Text(
+                        buildString {
+                            appendLine("[Attached document: ${attachment.label}]")
+                            append(attachment.textContent)
+                        }
+                    )
+            }
+        }
+
+        if (text.isNotBlank()) {
+            contents += Content.Text(text)
+        }
+
+        return Contents.of(contents)
+    }
+
+    private fun buildPersistedUserMessageContent(
+        text: String,
+        attachments: List<ChatAttachment>
+    ): String = buildString {
+        attachments.forEach { attachment ->
+            when (attachment) {
+                is ChatAttachment.Image -> appendLine("[Image attached: ${attachment.label}]")
+                is ChatAttachment.TextDocument -> appendLine("[Document attached: ${attachment.label}]")
+            }
+        }
+        if (text.isNotBlank()) {
+            if (isNotEmpty()) appendLine()
+            append(text)
+        }
+    }.ifBlank { "[Attachment sent]" }
 
     private fun showTypingIndicator() {
         _messages.value = _messages.value + MessageUi(

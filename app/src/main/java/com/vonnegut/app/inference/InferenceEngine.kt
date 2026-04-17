@@ -81,20 +81,17 @@ class InferenceEngine {
      */
     suspend fun generate(
         systemInstruction: String,
-        history: List<Pair<String, String>>,
-        userMessage: String,
+        history: List<Message>,
+        userMessage: Contents,
         temperature: Float,
         onToken: (String) -> Unit
     ) = withContext(Dispatchers.IO) {
         val eng = engine ?: throw IllegalStateException("Model not loaded")
         _state.value = State.Generating
         try {
-            val historyMessages = history.map { (role, content) ->
-                if (role == "user") Message.user(content) else Message.model(content)
-            }
             val config = ConversationConfig(
                 systemInstruction = Contents.of(systemInstruction),
-                initialMessages = historyMessages,
+                initialMessages = history,
                 samplerConfig = SamplerConfig(topK = 40, topP = 0.95, temperature = temperature.toDouble())
             )
             eng.createConversation(config).use { conversation ->

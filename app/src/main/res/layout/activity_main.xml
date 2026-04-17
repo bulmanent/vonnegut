@@ -14,7 +14,40 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:popupTheme="@style/ThemeOverlay.Material3.Light" />
+            android:background="@color/md_theme_light_primary"
+            android:titleTextColor="@color/md_theme_light_onPrimary"
+            app:popupTheme="@style/ThemeOverlay.Material3.Light">
+
+            <LinearLayout
+                android:id="@+id/toolbar_model_selector"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp">
+
+                <TextView
+                    android:id="@+id/text_toolbar_model"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxWidth="220dp"
+                    android:singleLine="true"
+                    android:textColor="@color/md_theme_light_onPrimary"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/image_toolbar_dropdown"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="6dp"
+                    android:src="@android:drawable/arrow_down_float"
+                    android:tint="@color/md_theme_light_onPrimary" />
+            </LinearLayout>
+
+        </androidx.appcompat.widget.Toolbar>
 
     </com.google.android.material.appbar.AppBarLayout>
 
