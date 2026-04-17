@@ -13,6 +13,7 @@ import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
+import android.view.ContextThemeWrapper
 import androidx.appcompat.widget.Toolbar
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -357,7 +358,10 @@ class ChatFragment : Fragment() {
     }
 
     private fun showAttachmentMenu() {
-        PopupMenu(requireContext(), binding.buttonAddAttachment).apply {
+        PopupMenu(
+            ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_Vonnegut_PopupMenu),
+            binding.buttonAddAttachment
+        ).apply {
             menu.add(0, MENU_PICK_IMAGE, 0, "Image")
             menu.add(0, MENU_PICK_TEXT, 1, "Text file")
             menu.add(0, MENU_TAKE_PHOTO, 2, "Take photo")
@@ -460,7 +464,10 @@ class ChatFragment : Fragment() {
     private fun showModelMenu(anchor: View) {
         val activeModelPath =
             (requireActivity().application as com.vonnegut.app.VonnegutApplication).preferences.activeModelPath
-        PopupMenu(requireContext(), anchor).apply {
+        PopupMenu(
+            ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_Vonnegut_PopupMenu),
+            anchor
+        ).apply {
             installedModelPaths.forEachIndexed { index, path ->
                 val title = File(path).nameWithoutExtension +
                     if (path == activeModelPath) "  •" else ""
@@ -477,7 +484,10 @@ class ChatFragment : Fragment() {
     }
 
     private fun showBurgerMenu(anchor: View) {
-        PopupMenu(requireContext(), anchor).apply {
+        PopupMenu(
+            ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_Vonnegut_PopupMenu),
+            anchor
+        ).apply {
             menu.add(0, MENU_NEW_CHAT, 0, "New chat")
             menu.add(0, MENU_SETTINGS, 1, "Settings")
             if (viewModel.recentSessions.value.isNotEmpty()) {
