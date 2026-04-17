@@ -1,0 +1,21 @@
+{
+  "updated": "2026-04-17",
+  "models": [
+    {
+      "name": "Gemma 4 E2B IT — Recommended",
+      "filename": "gemma-4-E2B-it.litertlm",
+      "size_mb": 2580,
+      "url": "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm",
+      "quantization": "INT4",
+      "notes": "Current mobile SOTA. Effective 2B parameters, optimised for edge devices. Best speed/quality trade-off on-device."
+    },
+    {
+      "name": "Gemma 4 E4B IT",
+      "filename": "gemma-4-E4B-it.litertlm",
+      "size_mb": 3650,
+      "url": "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm",
+      "quantization": "INT4",
+      "notes": "Effective 4B parameters. Higher quality than E2B, needs more RAM. Good for high-end devices."
+    }
+  ]
+}

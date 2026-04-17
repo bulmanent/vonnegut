@@ -26,6 +26,7 @@ class UserPreferences(context: Context) {
         const val KEY_TEMPERATURE = "temperature"
         const val KEY_DARK_THEME = "dark_theme"
         const val KEY_CURRENT_SESSION_ID = "current_session_id"
+        const val KEY_MODEL_SOURCE_TREE_URI = "model_source_tree_uri"
 
         val DEFAULT_SYSTEM_PROMPT = """
 You are Vonnegut, a personal AI assistant running locally on the user's device.
@@ -129,6 +130,10 @@ Do not fabricate citations or sources.
     var currentSessionId: Long
         get() = prefs.getLong(KEY_CURRENT_SESSION_ID, -1L)
         set(value) = prefs.edit().putLong(KEY_CURRENT_SESSION_ID, value).apply()
+
+    var modelSourceTreeUri: String?
+        get() = prefs.getString(KEY_MODEL_SOURCE_TREE_URI, null)
+        set(value) = prefs.edit().putString(KEY_MODEL_SOURCE_TREE_URI, value).apply()
 
     fun buildUserProfileBlock(): String {
         return buildString {

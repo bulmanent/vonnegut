@@ -20,7 +20,10 @@ data class SettingsState(
     val contextWindowLimit: Int,
     val maxResponseTokens: Int,
     val temperature: Float,
-    val darkTheme: Boolean
+    val darkTheme: Boolean,
+    val activeModelPath: String?,
+    val modelsDirectoryPath: String,
+    val sourceDirectoryUri: String?
 )
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -43,8 +46,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         contextWindowLimit = prefs.contextWindowLimit,
         maxResponseTokens = prefs.maxResponseTokens,
         temperature = prefs.temperature,
-        darkTheme = prefs.darkTheme
+        darkTheme = prefs.darkTheme,
+        activeModelPath = prefs.activeModelPath,
+        modelsDirectoryPath = appModelsDirectory(),
+        sourceDirectoryUri = prefs.modelSourceTreeUri
     )
+
+    private fun appModelsDirectory(): String =
+        getApplication<VonnegutApplication>()
+            .getExternalFilesDir(null)
+            ?.resolve("models")
+            ?.absolutePath
+            ?: "(unavailable)"
 
     fun saveAll(
         systemPrompt: String,
@@ -80,5 +93,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun resetSystemPrompt() {
         prefs.systemPrompt = UserPreferences.DEFAULT_SYSTEM_PROMPT
         _state.value = _state.value.copy(systemPrompt = UserPreferences.DEFAULT_SYSTEM_PROMPT)
+    }
+
+    fun refresh() {
+        _state.value = loadState()
     }
 }

@@ -166,11 +166,13 @@ class ChatFragment : Fragment() {
                 binding.inputArea.isVisible = false
                 binding.statusBar.isVisible = true
                 binding.statusText.text =
-                    "No model loaded. Copy a .task file to the app's models folder, or download one below."
+                    "No model loaded. Import a .litertlm model, scan a model folder, or download one below."
                 binding.statusActionButton.isVisible = true
                 binding.statusActionButton.text = "Manage Models"
                 binding.statusActionButton.setOnClickListener {
-                    findNavController().navigate(R.id.action_chat_to_model_manager)
+                    if (findNavController().currentDestination?.id == R.id.chatFragment) {
+                        findNavController().navigate(R.id.action_chat_to_model_manager)
+                    }
                 }
             }
             is ChatUiState.ModelLoading -> {
@@ -199,7 +201,9 @@ class ChatFragment : Fragment() {
                 binding.statusActionButton.isVisible = true
                 binding.statusActionButton.text = "Manage Models"
                 binding.statusActionButton.setOnClickListener {
-                    findNavController().navigate(R.id.action_chat_to_model_manager)
+                    if (findNavController().currentDestination?.id == R.id.chatFragment) {
+                        findNavController().navigate(R.id.action_chat_to_model_manager)
+                    }
                 }
             }
         }
@@ -218,6 +222,14 @@ class ChatFragment : Fragment() {
         }
         R.id.action_rename -> {
             showRenameDialog()
+            true
+        }
+        R.id.action_models -> {
+            findNavController().navigate(R.id.action_chat_to_model_manager)
+            true
+        }
+        R.id.action_settings -> {
+            findNavController().navigate(R.id.action_chat_to_settings)
             true
         }
         R.id.action_new_session -> {

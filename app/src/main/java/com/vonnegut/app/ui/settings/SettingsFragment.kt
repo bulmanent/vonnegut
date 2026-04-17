@@ -31,6 +31,7 @@ class SettingsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        viewModel.refresh()
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -52,6 +53,11 @@ class SettingsFragment : Fragment() {
                         binding.switchDarkTheme.isChecked = state.darkTheme
                         binding.editSystemPrompt.tag = "populated"
                     }
+                    binding.textActiveModelPath.text =
+                        state.activeModelPath ?: "No active model selected"
+                    binding.textModelsDirectoryPath.text = state.modelsDirectoryPath
+                    binding.textSourceDirectoryUri.text =
+                        state.sourceDirectoryUri ?: "No external model folder selected"
                 }
             }
         }
@@ -66,12 +72,19 @@ class SettingsFragment : Fragment() {
         }
 
         binding.buttonOpenModelManager.setOnClickListener {
-            findNavController().navigate(R.id.action_settings_to_model_manager)
+            if (findNavController().currentDestination?.id == R.id.settingsFragment) {
+                findNavController().navigate(R.id.action_settings_to_model_manager)
+            }
         }
 
         binding.buttonSave.setOnClickListener {
             saveSettings()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.refresh()
     }
 
     private fun saveSettings() {
