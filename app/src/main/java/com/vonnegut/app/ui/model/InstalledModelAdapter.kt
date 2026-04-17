@@ -26,14 +26,16 @@ class InstalledModelAdapter(
         fun bind(model: InstalledModel) {
             binding.textModelName.text = model.name
             binding.textModelSize.text = "${model.sizeMb} MB"
-            binding.activeIndicator.text = if (model.isActive) "Active" else ""
             binding.activeIndicator.alpha = if (model.isActive) 1f else 0f
 
+            // Tap to set active; long-press also opens delete confirmation
             binding.root.setOnClickListener { onSetActive(model) }
-            binding.buttonDelete.setOnLongClickListener {
+            binding.root.setOnLongClickListener {
                 onDelete(model)
                 true
             }
+            // Delete button tap also triggers confirmation
+            binding.buttonDelete.setOnClickListener { onDelete(model) }
         }
     }
 

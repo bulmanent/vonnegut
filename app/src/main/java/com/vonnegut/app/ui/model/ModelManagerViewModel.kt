@@ -203,6 +203,7 @@ class ModelManagerViewModel(application: Application) : AndroidViewModel(applica
 
     companion object {
         private const val TAG = "ModelManagerViewModel"
+        // TODO: Replace YOUR_USERNAME with your GitHub username after pushing this repo
         private const val MANIFEST_URL =
             "https://raw.githubusercontent.com/YOUR_USERNAME/vonnegut/main/models.json"
         private const val MANIFEST_CACHE_FILE = "models_manifest_cache.json"
