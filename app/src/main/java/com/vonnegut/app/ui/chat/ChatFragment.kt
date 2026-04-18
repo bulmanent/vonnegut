@@ -12,10 +12,8 @@ import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.ListPopupWindow
 import android.widget.PopupMenu
-import android.widget.PopupWindow
 import android.widget.TextView
 import android.widget.Toast
-import android.graphics.drawable.ColorDrawable
 import android.view.ContextThemeWrapper
 import androidx.appcompat.widget.Toolbar
 import androidx.activity.result.contract.ActivityResultContracts
@@ -487,7 +485,6 @@ class ChatFragment : Fragment() {
 
     private fun showBurgerMenu(anchor: View) {
         val sessions = viewModel.recentSessions.value.take(MAX_RECENT_CHATS).toMutableList()
-        var activeDeletePopup: PopupWindow? = null
 
         data class Item(val id: Int, val label: String)
         val items = mutableListOf<Item>()
@@ -510,29 +507,13 @@ class ChatFragment : Fragment() {
             override fun isEnabled(pos: Int) = items.getOrNull(pos)?.id != MENU_HISTORY_HEADER
         }
 
-        fun refreshAdapter() {
-            adapter.clear()
-            adapter.addAll(items.map { it.label })
-        }
-
         val popup = ListPopupWindow(ctx)
         popup.anchorView = anchor
         popup.setAdapter(adapter)
         // WRAP_CONTENT resolves to anchor width when anchor is full-width toolbar — use explicit dp
         popup.width = (240 * resources.displayMetrics.density).toInt()
 
-        popup.setOnDismissListener {
-            activeDeletePopup?.dismiss()
-            activeDeletePopup = null
-        }
-
         popup.setOnItemClickListener { _, _, pos, _ ->
-            // If delete popup is showing, any tap elsewhere just closes it — no navigation
-            if (activeDeletePopup != null) {
-                activeDeletePopup?.dismiss()
-                activeDeletePopup = null
-                return@setOnItemClickListener
-            }
             val item = items.getOrNull(pos) ?: return@setOnItemClickListener
             popup.dismiss()
             when {
@@ -549,44 +530,20 @@ class ChatFragment : Fragment() {
 
         popup.show()
 
-        popup.listView?.setOnItemLongClickListener { _, itemView, pos, _ ->
+        popup.listView?.setOnItemLongClickListener { _, _, pos, _ ->
             val item = items.getOrNull(pos) ?: return@setOnItemLongClickListener false
             if (item.id >= MENU_HISTORY_BASE) {
                 sessions.getOrNull(item.id - MENU_HISTORY_BASE)?.let { session ->
-                    activeDeletePopup?.dismiss()
-                    activeDeletePopup = showDeletePopup(itemView) {
-                        viewModel.deleteSession(session)
-                        sessions.remove(session)
-                        rebuild()
-                        refreshAdapter()
-                        activeDeletePopup = null
-                    }
+                    popup.dismiss()
+                    AlertDialog.Builder(requireContext())
+                        .setTitle("Delete \"${session.name}\"?")
+                        .setPositiveButton("Delete") { _, _ -> viewModel.deleteSession(session) }
+                        .setNegativeButton("Cancel", null)
+                        .show()
                 }
                 true
             } else false
         }
-    }
-
-    private fun showDeletePopup(anchor: View, onDelete: () -> Unit): PopupWindow {
-        val ctx = requireContext()
-        val density = resources.displayMetrics.density
-        val tv = TextView(ctx).apply {
-            text = "Delete"
-            setPadding((16 * density).toInt(), (12 * density).toInt(), (16 * density).toInt(), (12 * density).toInt())
-            setTextColor(ContextCompat.getColor(ctx, android.R.color.holo_red_light))
-            textSize = 16f
-        }
-        val win = PopupWindow(tv, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-            isFocusable = false
-            // NOT outside-touchable: ACTION_UP from the long press would otherwise land outside
-            // this window and immediately dismiss it before the user can tap Delete.
-            isOutsideTouchable = false
-            setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(ctx, R.color.md_theme_light_surface)))
-            elevation = 8f * density
-        }
-        tv.setOnClickListener { win.dismiss(); onDelete() }
-        win.showAsDropDown(anchor)
-        return win
     }
 
     private companion object {
