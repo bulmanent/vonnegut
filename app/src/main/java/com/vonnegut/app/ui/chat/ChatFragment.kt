@@ -487,6 +487,7 @@ class ChatFragment : Fragment() {
 
     private fun showBurgerMenu(anchor: View) {
         val sessions = viewModel.recentSessions.value.take(MAX_RECENT_CHATS).toMutableList()
+        var activeDeletePopup: PopupWindow? = null
 
         data class Item(val id: Int, val label: String)
         val items = mutableListOf<Item>()
@@ -517,9 +518,21 @@ class ChatFragment : Fragment() {
         val popup = ListPopupWindow(ctx)
         popup.anchorView = anchor
         popup.setAdapter(adapter)
-        popup.width = ListPopupWindow.WRAP_CONTENT
+        // WRAP_CONTENT resolves to anchor width when anchor is full-width toolbar — use explicit dp
+        popup.width = (240 * resources.displayMetrics.density).toInt()
+
+        popup.setOnDismissListener {
+            activeDeletePopup?.dismiss()
+            activeDeletePopup = null
+        }
 
         popup.setOnItemClickListener { _, _, pos, _ ->
+            // If delete popup is showing, any tap elsewhere just closes it — no navigation
+            if (activeDeletePopup != null) {
+                activeDeletePopup?.dismiss()
+                activeDeletePopup = null
+                return@setOnItemClickListener
+            }
             val item = items.getOrNull(pos) ?: return@setOnItemClickListener
             popup.dismiss()
             when {
@@ -540,11 +553,13 @@ class ChatFragment : Fragment() {
             val item = items.getOrNull(pos) ?: return@setOnItemLongClickListener false
             if (item.id >= MENU_HISTORY_BASE) {
                 sessions.getOrNull(item.id - MENU_HISTORY_BASE)?.let { session ->
-                    showDeletePopup(itemView) {
+                    activeDeletePopup?.dismiss()
+                    activeDeletePopup = showDeletePopup(itemView) {
                         viewModel.deleteSession(session)
                         sessions.remove(session)
                         rebuild()
                         refreshAdapter()
+                        activeDeletePopup = null
                     }
                 }
                 true
@@ -552,7 +567,7 @@ class ChatFragment : Fragment() {
         }
     }
 
-    private fun showDeletePopup(anchor: View, onDelete: () -> Unit) {
+    private fun showDeletePopup(anchor: View, onDelete: () -> Unit): PopupWindow {
         val ctx = requireContext()
         val density = resources.displayMetrics.density
         val tv = TextView(ctx).apply {
@@ -562,13 +577,16 @@ class ChatFragment : Fragment() {
             textSize = 16f
         }
         val win = PopupWindow(tv, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-            isFocusable = false         // won't steal focus from the ListPopupWindow
-            isOutsideTouchable = true   // tapping outside dismisses only this popup
+            isFocusable = false
+            // NOT outside-touchable: ACTION_UP from the long press would otherwise land outside
+            // this window and immediately dismiss it before the user can tap Delete.
+            isOutsideTouchable = false
             setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(ctx, R.color.md_theme_light_surface)))
             elevation = 8f * density
         }
         tv.setOnClickListener { win.dismiss(); onDelete() }
         win.showAsDropDown(anchor)
+        return win
     }
 
     private companion object {

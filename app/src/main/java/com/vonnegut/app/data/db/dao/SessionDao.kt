@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface SessionDao {
 
-    @Query("SELECT * FROM sessions ORDER BY updated_at DESC")
+    @Query("SELECT * FROM sessions WHERE id IN (SELECT DISTINCT session_id FROM messages) ORDER BY updated_at DESC")
     fun getAllSessions(): Flow<List<Session>>
 
     @Query("SELECT * FROM sessions ORDER BY updated_at DESC LIMIT 1")
