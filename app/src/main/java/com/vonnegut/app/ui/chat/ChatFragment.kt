@@ -12,8 +12,10 @@ import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.ListPopupWindow
 import android.widget.PopupMenu
+import android.widget.PopupWindow
 import android.widget.TextView
 import android.widget.Toast
+import android.graphics.drawable.ColorDrawable
 import android.view.ContextThemeWrapper
 import androidx.appcompat.widget.Toolbar
 import androidx.activity.result.contract.ActivityResultContracts
@@ -484,77 +486,89 @@ class ChatFragment : Fragment() {
     }
 
     private fun showBurgerMenu(anchor: View) {
-        val sessions = viewModel.recentSessions.value.take(MAX_RECENT_CHATS)
+        val sessions = viewModel.recentSessions.value.take(MAX_RECENT_CHATS).toMutableList()
 
-        val items = mutableListOf<Pair<Int, String>>()
-        items += MENU_NEW_CHAT to "New chat"
-        items += MENU_SETTINGS to "Settings"
-        if (sessions.isNotEmpty()) {
-            items += MENU_HISTORY_HEADER to "Recent chats"
-            sessions.forEachIndexed { index, session ->
-                items += (MENU_HISTORY_BASE + index) to session.name
+        data class Item(val id: Int, val label: String)
+        val items = mutableListOf<Item>()
+
+        fun rebuild() {
+            items.clear()
+            items += Item(MENU_NEW_CHAT, "New chat")
+            items += Item(MENU_SETTINGS, "Settings")
+            if (sessions.isNotEmpty()) {
+                items += Item(MENU_HISTORY_HEADER, "Recent chats")
+                sessions.forEachIndexed { idx, s -> items += Item(MENU_HISTORY_BASE + idx, s.name) }
             }
         }
+        rebuild()
 
-        val themedContext = ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_Vonnegut_PopupMenu)
+        val ctx = ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_Vonnegut_PopupMenu)
         val adapter = object : ArrayAdapter<String>(
-            themedContext,
-            android.R.layout.simple_list_item_1,
-            items.map { it.second }
+            ctx, android.R.layout.simple_list_item_1, items.map { it.label }.toMutableList()
         ) {
-            override fun isEnabled(position: Int) = items[position].first != MENU_HISTORY_HEADER
+            override fun isEnabled(pos: Int) = items.getOrNull(pos)?.id != MENU_HISTORY_HEADER
         }
 
-        val popup = ListPopupWindow(themedContext)
+        fun refreshAdapter() {
+            adapter.clear()
+            adapter.addAll(items.map { it.label })
+        }
+
+        val popup = ListPopupWindow(ctx)
         popup.anchorView = anchor
         popup.setAdapter(adapter)
         popup.width = ListPopupWindow.WRAP_CONTENT
 
-        popup.setOnItemClickListener { _, _, position, _ ->
-            val id = items[position].first
+        popup.setOnItemClickListener { _, _, pos, _ ->
+            val item = items.getOrNull(pos) ?: return@setOnItemClickListener
             popup.dismiss()
             when {
-                id == MENU_NEW_CHAT -> {
+                item.id == MENU_NEW_CHAT -> {
                     viewModel.startNewSession()
                     pendingAttachments.clear()
                     renderPendingAttachments()
                 }
-                id == MENU_SETTINGS -> findNavController().navigate(R.id.action_chat_to_settings)
-                id >= MENU_HISTORY_BASE -> {
-                    sessions.getOrNull(id - MENU_HISTORY_BASE)?.let { viewModel.switchToSession(it) }
-                }
+                item.id == MENU_SETTINGS -> findNavController().navigate(R.id.action_chat_to_settings)
+                item.id >= MENU_HISTORY_BASE -> sessions.getOrNull(item.id - MENU_HISTORY_BASE)
+                    ?.let { viewModel.switchToSession(it) }
             }
         }
 
         popup.show()
 
-        popup.listView?.setOnItemLongClickListener { _, itemView, position, _ ->
-            val id = items[position].first
-            if (id >= MENU_HISTORY_BASE) {
-                sessions.getOrNull(id - MENU_HISTORY_BASE)?.let { session ->
-                    popup.dismiss()
-                    showSessionContextMenu(itemView, session)
+        popup.listView?.setOnItemLongClickListener { _, itemView, pos, _ ->
+            val item = items.getOrNull(pos) ?: return@setOnItemLongClickListener false
+            if (item.id >= MENU_HISTORY_BASE) {
+                sessions.getOrNull(item.id - MENU_HISTORY_BASE)?.let { session ->
+                    showDeletePopup(itemView) {
+                        viewModel.deleteSession(session)
+                        sessions.remove(session)
+                        rebuild()
+                        refreshAdapter()
+                    }
                 }
                 true
-            } else {
-                false
-            }
+            } else false
         }
     }
 
-    private fun showSessionContextMenu(anchor: View, session: Session) {
-        PopupMenu(
-            ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_Vonnegut_PopupMenu),
-            anchor
-        ).apply {
-            menu.add(0, MENU_SESSION_DELETE, 0, "Delete")
-            setOnMenuItemClickListener { item ->
-                if (item.itemId == MENU_SESSION_DELETE) {
-                    viewModel.deleteSession(session)
-                    true
-                } else false
-            }
-        }.show()
+    private fun showDeletePopup(anchor: View, onDelete: () -> Unit) {
+        val ctx = requireContext()
+        val density = resources.displayMetrics.density
+        val tv = TextView(ctx).apply {
+            text = "Delete"
+            setPadding((16 * density).toInt(), (12 * density).toInt(), (16 * density).toInt(), (12 * density).toInt())
+            setTextColor(ContextCompat.getColor(ctx, android.R.color.holo_red_light))
+            textSize = 16f
+        }
+        val win = PopupWindow(tv, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            isFocusable = false         // won't steal focus from the ListPopupWindow
+            isOutsideTouchable = true   // tapping outside dismisses only this popup
+            setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(ctx, R.color.md_theme_light_surface)))
+            elevation = 8f * density
+        }
+        tv.setOnClickListener { win.dismiss(); onDelete() }
+        win.showAsDropDown(anchor)
     }
 
     private companion object {
@@ -567,6 +581,5 @@ class ChatFragment : Fragment() {
         private const val MENU_HISTORY_HEADER = 102
         private const val MENU_HISTORY_BASE = 200
         private const val MAX_RECENT_CHATS = 8
-        private const val MENU_SESSION_DELETE = 300
     }
 }
