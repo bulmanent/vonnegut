@@ -16,6 +16,7 @@
             android:layout_height="?attr/actionBarSize"
             android:background="@color/md_theme_light_primary"
             android:titleTextColor="@color/md_theme_light_onPrimary"
+            app:theme="@style/ThemeOverlay.Vonnegut.Toolbar"
             app:popupTheme="@style/ThemeOverlay.Material3.Light">
 
             <LinearLayout

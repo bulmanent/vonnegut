@@ -20,6 +20,11 @@
         <item name="colorOutlineVariant">@color/md_theme_light_outlineVariant</item>
     </style>
 
+    <style name="ThemeOverlay.Vonnegut.Toolbar" parent="">
+        <item name="colorControlNormal">@color/md_theme_light_onPrimary</item>
+        <item name="android:textColorPrimary">@color/md_theme_light_onPrimary</item>
+    </style>
+
     <style name="ThemeOverlay.Vonnegut.PopupMenu" parent="ThemeOverlay.Material3.Light">
         <item name="android:textColorPrimary">@color/md_theme_light_onBackground</item>
         <item name="android:textColorSecondary">@color/md_theme_light_onBackground</item>

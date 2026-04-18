@@ -2,14 +2,15 @@ package com.vonnegut.app.ui.chat
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import android.widget.ImageView
+import android.widget.ListPopupWindow
 import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
@@ -18,6 +19,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.isVisible
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
@@ -29,6 +31,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.chip.Chip
 import com.vonnegut.app.R
+import com.vonnegut.app.data.db.entities.Session
 import com.vonnegut.app.databinding.FragmentChatBinding
 import com.vonnegut.app.speech.SpeechInputManager
 import kotlinx.coroutines.launch
@@ -46,6 +49,7 @@ class ChatFragment : Fragment() {
     private val pendingAttachments = mutableListOf<ChatAttachment>()
     private val installedModelPaths = mutableListOf<String>()
     private var latestUiState: ChatUiState = ChatUiState.NoModel
+    private var pendingCameraFile: File? = null
 
     private val requestMicPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -71,10 +75,15 @@ class ChatFragment : Fragment() {
     }
 
     private val takePictureLauncher = registerForActivityResult(
-        ActivityResultContracts.TakePicturePreview()
-    ) { bitmap ->
-        if (bitmap != null) {
-            addCameraAttachment(bitmap)
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        val file = pendingCameraFile
+        pendingCameraFile = null
+        if (success && file != null) {
+            pendingAttachments += ChatAttachment.Image(file.name, file.absolutePath)
+            renderPendingAttachments()
+        } else {
+            file?.delete()
         }
     }
 
@@ -373,7 +382,14 @@ class ChatFragment : Fragment() {
                         true
                     }
                     MENU_TAKE_PHOTO -> {
-                        takePictureLauncher.launch(null)
+                        val file = File(attachmentsDir(), "camera-${System.currentTimeMillis()}.jpg")
+                        pendingCameraFile = file
+                        val uri = FileProvider.getUriForFile(
+                            requireContext(),
+                            "${requireContext().packageName}.fileprovider",
+                            file
+                        )
+                        takePictureLauncher.launch(uri)
                         true
                     }
                     else -> false
@@ -393,19 +409,6 @@ class ChatFragment : Fragment() {
             renderPendingAttachments()
         }.onFailure {
             Toast.makeText(requireContext(), "Could not attach image: ${it.message}", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun addCameraAttachment(bitmap: Bitmap) {
-        runCatching {
-            val destination = File(attachmentsDir(), "camera-${System.currentTimeMillis()}.jpg")
-            FileOutputStream(destination).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 92, out)
-            }
-            pendingAttachments += ChatAttachment.Image(destination.name, destination.absolutePath)
-            renderPendingAttachments()
-        }.onFailure {
-            Toast.makeText(requireContext(), "Could not save photo: ${it.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -481,38 +484,75 @@ class ChatFragment : Fragment() {
     }
 
     private fun showBurgerMenu(anchor: View) {
+        val sessions = viewModel.recentSessions.value.take(MAX_RECENT_CHATS)
+
+        val items = mutableListOf<Pair<Int, String>>()
+        items += MENU_NEW_CHAT to "New chat"
+        items += MENU_SETTINGS to "Settings"
+        if (sessions.isNotEmpty()) {
+            items += MENU_HISTORY_HEADER to "Recent chats"
+            sessions.forEachIndexed { index, session ->
+                items += (MENU_HISTORY_BASE + index) to session.name
+            }
+        }
+
+        val themedContext = ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_Vonnegut_PopupMenu)
+        val adapter = object : ArrayAdapter<String>(
+            themedContext,
+            android.R.layout.simple_list_item_1,
+            items.map { it.second }
+        ) {
+            override fun isEnabled(position: Int) = items[position].first != MENU_HISTORY_HEADER
+        }
+
+        val popup = ListPopupWindow(themedContext)
+        popup.anchorView = anchor
+        popup.setAdapter(adapter)
+        popup.width = ListPopupWindow.WRAP_CONTENT
+
+        popup.setOnItemClickListener { _, _, position, _ ->
+            val id = items[position].first
+            popup.dismiss()
+            when {
+                id == MENU_NEW_CHAT -> {
+                    viewModel.startNewSession()
+                    pendingAttachments.clear()
+                    renderPendingAttachments()
+                }
+                id == MENU_SETTINGS -> findNavController().navigate(R.id.action_chat_to_settings)
+                id >= MENU_HISTORY_BASE -> {
+                    sessions.getOrNull(id - MENU_HISTORY_BASE)?.let { viewModel.switchToSession(it) }
+                }
+            }
+        }
+
+        popup.show()
+
+        popup.listView?.setOnItemLongClickListener { _, itemView, position, _ ->
+            val id = items[position].first
+            if (id >= MENU_HISTORY_BASE) {
+                sessions.getOrNull(id - MENU_HISTORY_BASE)?.let { session ->
+                    popup.dismiss()
+                    showSessionContextMenu(itemView, session)
+                }
+                true
+            } else {
+                false
+            }
+        }
+    }
+
+    private fun showSessionContextMenu(anchor: View, session: Session) {
         PopupMenu(
             ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_Vonnegut_PopupMenu),
             anchor
         ).apply {
-            menu.add(0, MENU_NEW_CHAT, 0, "New chat")
-            menu.add(0, MENU_SETTINGS, 1, "Settings")
-            if (viewModel.recentSessions.value.isNotEmpty()) {
-                menu.add(0, MENU_HISTORY_HEADER, 2, "Recent chats").isEnabled = false
-                viewModel.recentSessions.value.take(MAX_RECENT_CHATS).forEachIndexed { index, session ->
-                    menu.add(0, MENU_HISTORY_BASE + index, 3 + index, session.name)
-                }
-            }
+            menu.add(0, MENU_SESSION_DELETE, 0, "Delete")
             setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    MENU_NEW_CHAT -> {
-                        viewModel.startNewSession()
-                        pendingAttachments.clear()
-                        renderPendingAttachments()
-                        true
-                    }
-                    MENU_SETTINGS -> {
-                        findNavController().navigate(R.id.action_chat_to_settings)
-                        true
-                    }
-                    in MENU_HISTORY_BASE until (MENU_HISTORY_BASE + MAX_RECENT_CHATS) -> {
-                        viewModel.recentSessions.value
-                            .getOrNull(item.itemId - MENU_HISTORY_BASE)
-                            ?.let { viewModel.switchToSession(it) }
-                        true
-                    }
-                    else -> false
-                }
+                if (item.itemId == MENU_SESSION_DELETE) {
+                    viewModel.deleteSession(session)
+                    true
+                } else false
             }
         }.show()
     }
@@ -527,5 +567,6 @@ class ChatFragment : Fragment() {
         private const val MENU_HISTORY_HEADER = 102
         private const val MENU_HISTORY_BASE = 200
         private const val MAX_RECENT_CHATS = 8
+        private const val MENU_SESSION_DELETE = 300
     }
 }

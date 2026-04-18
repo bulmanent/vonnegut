@@ -173,6 +173,14 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun deleteSession(session: Session) {
+        viewModelScope.launch {
+            val isCurrentSession = _currentSession.value?.id == session.id
+            repository.deleteSession(session.id)
+            if (isCurrentSession) startNewSession()
+        }
+    }
+
     fun renameCurrentSession(name: String) {
         val session = _currentSession.value ?: return
         viewModelScope.launch {
