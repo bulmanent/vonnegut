@@ -15,6 +15,12 @@
 ## Change History
 *(Append-only — do not edit or compress past entries)*
 
+### 2026-04-19 — Tweak empty state styling
+- **Files changed:** `res/values/colors.xml`, `res/layout/fragment_chat.xml`
+- **What:** Background darkened from `#F7F1E4` to `#E8E7D5` (a shade darker than the VonnMain image). Both empty-state TextViews bumped from titleMedium/labelLarge to `textAppearanceTitleLarge` (22sp). Removed italic from "speak *".
+- **Why:** User requested background closer to image colour but darker, larger equal-sized text, no italic on speak *.
+- **Deferred:** None.
+
 ### 2026-04-19 — Update new-chat empty state
 - **Files changed:** `res/layout/fragment_chat.xml`, added `res/drawable-nodpi/vonn_main.png`
 - **What:** Replaced `app_icon` ImageView in the empty state with `vonn_main.png` (200dp square), added quote TextView ("God Damn it, you've got to be kind", max 220dp, centred, titleMedium), and "speak *" label below (italic, labelLarge, muted colour).

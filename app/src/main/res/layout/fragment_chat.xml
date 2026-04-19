@@ -78,7 +78,7 @@
             android:gravity="center"
             android:maxWidth="220dp"
             android:text="God Damn it, you&#8217;ve got to be kind"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
             android:textColor="?attr/colorOnBackground" />
 
         <TextView
@@ -86,9 +86,8 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
             android:text="speak *"
-            android:textAppearance="?attr/textAppearanceLabelLarge"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textStyle="italic" />
+            android:textAppearance="?attr/textAppearanceTitleLarge"
+            android:textColor="?attr/colorOnSurfaceVariant" />
 
     </LinearLayout>
 
