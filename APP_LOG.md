@@ -15,6 +15,12 @@
 ## Change History
 *(Append-only — do not edit or compress past entries)*
 
+### 2026-04-19 — Update new-chat empty state
+- **Files changed:** `res/layout/fragment_chat.xml`, added `res/drawable-nodpi/vonn_main.png`
+- **What:** Replaced `app_icon` ImageView in the empty state with `vonn_main.png` (200dp square), added quote TextView ("God Damn it, you've got to be kind", max 220dp, centred, titleMedium), and "speak *" label below (italic, labelLarge, muted colour).
+- **Why:** User requested new illustration and quote for the new chat screen.
+- **Deferred:** None.
+
 ### 2026-04-18 — Fix long-press delete in burger menu
 - **Files changed:** `ChatFragment.kt`
 - **What:** Replaced nested `PopupWindow` (`showDeletePopup`) with an `AlertDialog` shown after dismissing the `ListPopupWindow`. Removed `activeDeletePopup` variable, `setOnDismissListener`, and `showDeletePopup` method. Removed unused `PopupWindow` and `ColorDrawable` imports.

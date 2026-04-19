@@ -65,11 +65,31 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <ImageView
-            android:layout_width="216dp"
-            android:layout_height="216dp"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
             android:adjustViewBounds="true"
             android:contentDescription="@string/app_name"
-            android:src="@drawable/app_icon" />
+            android:src="@drawable/vonn_main" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:maxWidth="220dp"
+            android:text="God Damn it, you&#8217;ve got to be kind"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="?attr/colorOnBackground" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="speak *"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textStyle="italic" />
+
     </LinearLayout>
 
     <!-- Input area -->
