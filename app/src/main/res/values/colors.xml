@@ -25,7 +25,7 @@
     <color name="md_theme_light_onSecondary">#F8FBFF</color>
     <color name="md_theme_light_secondaryContainer">#79B7E8</color>
     <color name="md_theme_light_onSecondaryContainer">#F8FBFF</color>
-    <color name="md_theme_light_background">#E8E7D5</color>
+    <color name="md_theme_light_background">#F4F6DC</color>
     <color name="md_theme_light_onBackground">#14253B</color>
     <color name="md_theme_light_surface">#F7F1E4</color>
     <color name="md_theme_light_onSurface">#14253B</color>
